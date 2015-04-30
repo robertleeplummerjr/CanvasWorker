@@ -163,7 +163,7 @@
 <script src="canvasworker.js"></script>
 <script>
 	var compose = [],
-		max = 1000,
+		max = 15,
 		i = 0;
 
 	for (;i < max;i++) {
@@ -177,10 +177,11 @@
 
 	new CanvasWorker(['Smiley_Face_Small.png'], {
 		element: document.getElementById('ui'),
-		tiles: 1,
 		compose: compose,
-		drawFinished: function() {
-			document.getElementById('pgloading').style.display = 'none';
+		drawFinished: function(allFinished) {
+			if (allFinished === false) {
+				document.getElementById('pgloading').style.display = 'none';
+			}
 		}
 	});
 </script>

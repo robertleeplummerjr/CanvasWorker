@@ -1,23 +1,24 @@
 var CanvasWorker = (function() {
 	"use strict";
 
+	function split(a, n) {
+		var len = a.length,out = [], i = 0;
+		while (i < len) {
+			var size = Math.ceil((len - i) / n--);
+			out.push(a.slice(i, i += size));
+		}
+		return out;
+	}
+
 	function CanvasWorker(urls, settings) {
+		this.setDefaults(settings);
 
-		settings = this.setDefaults(settings);
-
-		this.canvas = document.createElement('canvas');
-		settings.element.appendChild(this.canvas);
-		this.canvas.width = settings.element.clientWidth;
-		this.canvas.height = settings.element.clientHeight;
-		this.context = this.canvas.getContext('2d');
-
-		this.imageData = this.context.getImageData(0, 0, this.canvas.width, this.canvas.height);
 		this.urls = urls;
 		this.urlData = {};
-		this.operative = operative(CanvasWorker.thread);
 		this.images = [];
 		this.raw = [];
 
+		this.buildMatrices();
 		this.loadAllImages();
 	}
 
@@ -48,6 +49,7 @@ var CanvasWorker = (function() {
 				canvas.width = img.width;
 				canvas.height = img.height;
 				context = canvas.getContext('2d');
+				context.clearRect(0, 0, img.width, img.height);
 				context.drawImage(img, 0, 0);
 
 				this.raw[i] = context.getImageData(0, 0, img.width, img.height);
@@ -86,15 +88,154 @@ var CanvasWorker = (function() {
 
 			return this;
 		},
-		render: function(callback) {
-			var me = this;
-			this.operative.drawEach(this.settings.compose, this.raw, this.imageData, function(merged) {
-				me.context.putImageData(merged, 0, 0);
+		groupComposeToMatrices: function() {
+			var s = this.settings,
+				compose = s.compose,
+				composeMax = compose.length,
+				matrixIndex = 0,
+				matrixMax = s.tiles,
+				cIndex,
+				sorted = 0,
+				matrices = this.matrices,
+				matrix,
+				c;
 
-				callback();
-			});
+			for (;matrixIndex < matrixMax; matrixIndex++) {
+				matrix = matrices[matrixIndex];
+
+				for (cIndex = 0; cIndex < composeMax; cIndex++) {
+					c = compose[cIndex];
+
+					//if inside outer
+					if (
+						c.x > matrix.leftOuter
+						&& c.x < matrix.rightOuter
+						&& c.y > matrix.topOuter
+						&& c.y < matrix.bottomOuter
+					) {
+						//if outside inner
+						if (
+							c.x < matrix.leftInner
+							|| c.x > matrix.rightInner
+							|| c.y < matrix.topInner
+							|| c.y > matrix.bottomInner
+						) {
+							matrix.compose.push(c);
+							sorted++;
+						}
+					}
+				}
+			}
+
+			if (sorted !== compose.length) {
+				throw new Error('Missed by: ' + (compose.length - sorted));
+			}
+			return this;
+
+		},
+		render: function(callback) {
+
+			this.groupComposeToMatrices();
+
+			var s = this.settings,
+				element = s.element,
+				matrices = this.matrices,
+				max = matrices.length,
+				success = 0,
+				me = this,
+				i = 0;
+
+			for (;i< max;i++) {
+				(function(matrix) {
+
+					var thread = me.thread(),
+						canvas = document.createElement('canvas'),
+						context = canvas.getContext('2d'),
+						imageData,
+						j = 0,
+						compose = matrix.compose,
+						maxJ = compose.length;
+
+					for (;j < maxJ; j++) {
+						thread.streamCompose(JSON.stringify(compose[j]));
+					}
+
+					canvas.width = element.clientWidth;
+					canvas.height = element.clientHeight;
+					context.clearRect(0, 0, canvas.width, canvas.height);
+					canvas.style.position = 'absolute';
+					imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+					thread.drawEach(me.raw, imageData, function (merged) {
+						context.putImageData(merged, 0, 0);
+
+						success++;
+
+						element.appendChild(canvas);
+
+						callback(false);
+
+						if (success === max) {
+							callback(true);
+						}
+					});
+				})(matrices[i]);
+			}
 
 			return this;
+		},
+		buildMatrices: function() {
+			var s = this.settings,
+				element = s.element,
+				center = {
+					x: element.clientWidth / 2,
+					y: element.clientHeight / 2
+				},
+				gap = {
+					x: center.x / s.tiles,
+					y: center.y / s.tiles
+				},
+				i = 1,
+				matrix;
+
+			for(;i <= s.tiles; i++) {
+				matrix = {
+					leftOuter: center.x - (gap.x * i),
+					rightOuter: center.x + (gap.x * i),
+					topOuter: center.y - (gap.y * i),
+					bottomOuter: center.y + (gap.y * i),
+
+					leftInner: i === 0 ? center.x : center.x - (gap.x * (i - 1)),
+					rightInner: i === 0 ? center.x : center.x + (gap.x * (i - 1)),
+					topInner: i === 0 ? center.y : center.y - (gap.y * (i - 1)),
+					bottomInner: i === 0 ? center.y : center.y + (gap.y * (i - 1)),
+
+					compose: []
+				};
+				this.matrices.push(matrix);
+			}
+
+			return this;
+		},
+		matrices: [],
+		threadCount: 8,
+		threadIndex: 0,
+		activeThreads: {},
+		thread: function() {
+			var activeThread,
+				i = this.threadIndex;
+
+			if (i >= this.threadCount) i = this.threadIndex = 0;
+
+			if (this.activeThreads[i] === undefined) {
+				this.activeThreads[i] = operative(CanvasWorker.threadScope);
+			}
+
+			activeThread = this.activeThreads[i];
+
+			this.threadIndex++;
+
+			return activeThread;
 		}
 	};
 
@@ -105,9 +246,14 @@ var CanvasWorker = (function() {
 		element: null
 	};
 
-	CanvasWorker.thread = {
-		drawEach: function(compose, rawImages, rawCanvas, callback) {
+	CanvasWorker.threadScope = {
+		compose: [],
+		streamCompose: function(c) {
+			this.compose.push(JSON.parse(c));
+		},
+		drawEach: function(rawImages, rawCanvas, callback) {
 			var i = 0,
+				compose = this.compose,
 				max = compose.length,
 				c;
 
@@ -119,31 +265,71 @@ var CanvasWorker = (function() {
 			callback(rawCanvas);
 		},
 		draw: function( rawCanvas, rawImage, x, y ) {
+			x = x >> 0;
+			y = y >> 0;
+
+			if (x === undefined) return;
+			if (y === undefined) return;
+
+			/**
+			 * Lookup x & y from index
+			 * y = (i / 4) % width
+			 * x = Math.floor((i / 4) / width)
+			 *
+			 * Lookup index from x & y
+			 * i = (y * width + x) * 4
+			 */
 			var newCanvasData = rawCanvas.data,
 				imageData = rawImage.data,
-				i = 0,
-				j = 0,
-				max = newCanvasData.length,
-				canvasX,
-				canvasY;
 
-			for (; i < max;) { // iterate through image bytes
+				//set starting point
+				i = (x + y) * 4,
+				newI,
+				j = 0,
+				canvasX,
+				canvasY,
+				maxI = (x + y + rawImage.width + rawImage.height) * 4,
+				maxJ = imageData.length,
+				left = x,
+				right = x + rawImage.width,
+				top = y,
+				bottom = y + rawImage.height;
+
+			for (; i < maxI;) { // iterate through image bytes
 
 				canvasY = (i / 4) % rawCanvas.width;
 				canvasX = Math.floor((i / 4) / rawCanvas.width);
 
 				if (
-					canvasX >= x
-					&& canvasY >= y
-					&& canvasX <= rawImage.width + x
-					&& canvasY <= rawImage.height + y
+					canvasX >= left
+					&& canvasY >= top
+					&& canvasX < right
+					&& canvasY < bottom
 				) {
 					newCanvasData[i++] = imageData[j++];
 					newCanvasData[i++] = imageData[j++];
 					newCanvasData[i++] = imageData[j++];
 					newCanvasData[i++] = imageData[j++];
+
+					//if we are done processing the imageData pixes, no need to continue
+					if (j >= maxJ) return rawCanvas;
 				} else {
-					i+=4;
+					//if (canvasY > top) {
+						//Go to the end of this line
+						i += (rawCanvas.width - canvasX) * 4;
+
+						//Go to the beginning of this image
+							i += x * 4;
+					//} else {
+					//	i++;
+					//}
+
+					//newI = ((canvasY + 1) * rawCanvas.width + x) * 4;
+					//if (newI > i) {
+					//	i = newI;
+					//} else {
+					//	i++;
+					//}
 				}
 			}
 
