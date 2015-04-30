@@ -100,7 +100,7 @@ var CanvasWorker = (function() {
 
 	CanvasWorker.defaultSettings = {
 		drawFinished: function() {},
-		tiles: 1,
+		tiles: 8,
 		compose: null,
 		element: null
 	};
