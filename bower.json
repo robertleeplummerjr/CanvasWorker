@@ -1,0 +1,27 @@
+{
+  "name": "CanvasWorker",
+  "version": "0.0.0",
+  "homepage": "https://github.com/robertleeplummerjr/CanvasWorker",
+  "authors": [
+    "Robert Plummer <RobertLeePlummerJr@Gmail.com>"
+  ],
+  "description": "process images in web workers",
+  "main": "canvasworker.js",
+  "keywords": [
+    "canvas",
+    "png",
+    "web",
+    "worker"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "operative": "~0.4.4"
+  }
+}
