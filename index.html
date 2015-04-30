@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+	<title></title>
+</head>
+<body>
+<div id="ui" style="width: 800px; height: 800px"></div>
+</body>
+<script src="bower_components/operative/dist/operative.js"></script>
+<script src="CanvasWorker/CanvasWorker.js"></script>
+<script>
+	var compose = [],
+		max = 1000,
+		i = 0;
+
+	for (;i < max;i++) {
+		compose.push({
+			image: 0,
+			x: Math.random() * 800,
+			y: Math.random() * 800
+		});
+	}
+
+
+	new CanvasWorker(['Smiley_Face_Small.png'], {
+		element: document.getElementById('ui'),
+		tiles: 1,
+		compose: compose,
+		drawFinished: function() {
+
+		}
+	});
+</script>
+</html>
