@@ -1,15 +1,6 @@
 var CanvasWorker = (function() {
 	"use strict";
 
-	function split(a, n) {
-		var len = a.length,out = [], i = 0;
-		while (i < len) {
-			var size = Math.ceil((len - i) / n--);
-			out.push(a.slice(i, i += size));
-		}
-		return out;
-	}
-
 	function CanvasWorker(urls, settings) {
 		this.setDefaults(settings);
 
