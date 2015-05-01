@@ -11,7 +11,7 @@
 	</style>
 </head>
 <body>
-<div id="ui" style="width: 800px; height: 800px"></div>
+<div id="ui" style="height: 800px"></div>
 
 <!--Start http://codepen.io/biht/pen/azQVxQ-->
 <div id="pgloading">
@@ -162,25 +162,27 @@
 <script src="bower_components/operative/dist/operative.js"></script>
 <script src="canvasworker.js"></script>
 <script>
-	var compose = [],
-		max = 1000,
-		i = 0;
+	var ui = document.getElementById('ui'),
+        compose = [],
+		max = 150000,
+		i = 0,
+		cw;
 
 	for (;i < max;i++) {
 		compose.push({
 			image: 0,
-			x: Math.random() * 800,
-			y: Math.random() * 800
+			x: Math.random() * ui.clientWidth,
+			y: Math.random() * ui.clientHeight
 		});
 	}
 
-
-	new CanvasWorker(['Smiley_Face_Small.png'], {
-		element: document.getElementById('ui'),
-		tiles: 1,
+	cw = new CanvasWorker(['Smiley_Face_Small.png'], {
+		element: ui,
 		compose: compose,
-		drawFinished: function() {
-			document.getElementById('pgloading').style.display = 'none';
+		drawFinished: function(allFinished) {
+			if (allFinished === false) {
+				document.getElementById('pgloading').style.display = 'none';
+			}
 		}
 	});
 </script>
