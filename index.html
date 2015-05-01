@@ -164,8 +164,9 @@
 <script>
 	var ui = document.getElementById('ui'),
         compose = [],
-		max = 15000,
-		i = 0;
+		max = 150000,
+		i = 0,
+		cw;
 
 	for (;i < max;i++) {
 		compose.push({
@@ -175,8 +176,7 @@
 		});
 	}
 
-
-	new CanvasWorker(['Smiley_Face_Small.png'], {
+	cw = new CanvasWorker(['Smiley_Face_Small.png'], {
 		element: ui,
 		compose: compose,
 		drawFinished: function(allFinished) {
