@@ -283,12 +283,12 @@ var CanvasWorker = (function() {
 				imageData = rawImage.data,
 
 				//set starting point
-				i = (x + y) * 4,
+				i = (y * rawCanvas.width + x) * 4,
 				newI,
 				j = 0,
 				canvasX,
 				canvasY,
-				maxI = (x + y + rawImage.width + rawImage.height) * 4,
+				maxI = ((y + rawImage.height) * rawCanvas.width + (x + rawImage.width)) * 4,
 				maxJ = imageData.length,
 				left = x,
 				right = x + rawImage.width,
@@ -297,40 +297,30 @@ var CanvasWorker = (function() {
 
 			for (; i < maxI;) { // iterate through image bytes
 
-				canvasY = (i / 4) % rawCanvas.width;
-				canvasX = Math.floor((i / 4) / rawCanvas.width);
+                //if we are done processing the imageData pixes, no need to continue
+                if (j >= maxJ) return rawCanvas;
+
+				canvasX = (i / 4) % rawCanvas.width;
+				canvasY = Math.floor((i / 4) / rawCanvas.width);
 
 				if (
 					canvasX >= left
-					&& canvasY >= top
 					&& canvasX < right
-					&& canvasY < bottom
 				) {
 					newCanvasData[i++] = imageData[j++];
 					newCanvasData[i++] = imageData[j++];
 					newCanvasData[i++] = imageData[j++];
 					newCanvasData[i++] = imageData[j++];
-
-					//if we are done processing the imageData pixes, no need to continue
-					if (j >= maxJ) return rawCanvas;
 				} else {
-					//if (canvasY > top) {
-						//Go to the end of this line
-						i += (rawCanvas.width - canvasX) * 4;
-
-						//Go to the beginning of this image
-							i += x * 4;
-					//} else {
-					//	i++;
-					//}
-
-					//newI = ((canvasY + 1) * rawCanvas.width + x) * 4;
-					//if (newI > i) {
-					//	i = newI;
-					//} else {
-					//	i++;
-					//}
-				}
+                    /*newCanvasData[i] = 200;
+                    newCanvasData[i + 1] = 200;
+                    newCanvasData[i + 2] = 200;
+                    newCanvasData[i + 3] = 200;*/
+                    //go to next line
+                    canvasY++;
+                    //and start back at x
+                    i = (canvasY * rawCanvas.width + x) * 4;
+                }
 			}
 
 			return rawCanvas;
