@@ -349,22 +349,28 @@ var CanvasWorker = (function() {
                 n_ = newCanvasData[canvasIndex+3];
 
                 //outputRed = (foregroundRed * foregroundAlpha) + (backgroundRed * (1.0 - foregroundAlpha));
-                if (_n < 255) {
-                    r_ = (_r * _n) + (r_ * (1.0));
-                    g_ = (_g * _n) + (g_ * (1.0));
-                    b_ = (_b * _n) + (b_ * (1.0));
+                if (_n === 255) {
+	                r_ = _r;
+	                g_ = _g;
+	                b_ = _b;
+                } else if (_n > 1) {
+	                r_ = (r_ + _r) / 2;
+	                g_ = (g_ + _g) / 2;
+	                b_ = (b_ + _b) / 2;
                 } else {
-                    r_ = _r;
-                    g_ = _g;
-                    b_ = _b;
+	                r_ = Math.min(r_ + _r, 255);
+	                g_ = Math.min(g_ + _g, 255);
+	                b_ = Math.min(b_ + _b, 255);
+	                /*g_ = (_g * _n) + (g_ * (1 - _n));
+	                b_ = (_b * _n) + (b_ * (1 - _n));*/
                 }
+
+				n_ += _n;
 
                 newCanvasData[canvasIndex++] = r_;
                 newCanvasData[canvasIndex++] = g_;
                 newCanvasData[canvasIndex++] = b_;
-                newCanvasData[canvasIndex] += _n;
-                newCanvasData[canvasIndex] = newCanvasData[canvasIndex] > 255 ? 255 : newCanvasData[canvasIndex];
-                canvasIndex++;
+                newCanvasData[canvasIndex++] = n_ < 255 ? n_ : 255;
 
                 /*if (imageData[i] > 0) newCanvasData[canvasIndex++] = imageData[i];
                 if (imageData[i + 1] > 0) newCanvasData[canvasIndex++] += imageData[i+1];
