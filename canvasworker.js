@@ -124,6 +124,10 @@ var CanvasWorker = (function() {
 					tile.setAttribute('data-index', tiles.length);
 
 					style = tile.style;
+                    style['opacity'] = 0.01;
+                    style['transition'] = 'opacity .25s ease-in-out';
+                    style['-moz-transition'] = 'opacity .25s ease-in-out';
+                    style['-webkit-transition'] = 'opacity .25s ease-in-out';
 					style.position = 'absolute';
 					style.left = (w * columnIndex) + 'px';
 					style.top = (h * rowIndex) + 'px';
@@ -213,6 +217,10 @@ var CanvasWorker = (function() {
 
 						container.appendChild(canvas);
 
+                        setTimeout(function() {
+                            canvas.style.opacity = '1';
+                        },0);
+
 						success++;
 
 						callback(false);
@@ -301,7 +309,15 @@ var CanvasWorker = (function() {
 				max = imageData.length,
 				imageX = 0,
 				imageY = 0,
-				canvasIndex;
+				canvasIndex,
+                _r,
+                _g,
+                _b,
+                _n,
+                r_,
+                g_,
+                b_,
+                n_;
 
 			for (;i < max;) { // iterate through image bytes
 				imageX = (i / 4) % rawImage.width;
@@ -322,10 +338,39 @@ var CanvasWorker = (function() {
 				 * newCanvasData[i + 2] = 200;
 				 * newCanvasData[i + 3] = 200;*/
 
-				newCanvasData[canvasIndex++] = imageData[i++];
-				newCanvasData[canvasIndex++] = imageData[i++];
-				newCanvasData[canvasIndex++] = imageData[i++];
-				newCanvasData[canvasIndex++] = imageData[i++];
+                _r = imageData[i++];
+                _g = imageData[i++];
+                _b = imageData[i++];
+                _n = imageData[i++];
+
+                r_ = newCanvasData[canvasIndex];
+                g_ = newCanvasData[canvasIndex+1];
+                b_ = newCanvasData[canvasIndex+2];
+                n_ = newCanvasData[canvasIndex+3];
+
+                //outputRed = (foregroundRed * foregroundAlpha) + (backgroundRed * (1.0 - foregroundAlpha));
+                if (_n < 255) {
+                    r_ = (_r * _n) + (r_ * (1.0));
+                    g_ = (_g * _n) + (g_ * (1.0));
+                    b_ = (_b * _n) + (b_ * (1.0));
+                } else {
+                    r_ = _r;
+                    g_ = _g;
+                    b_ = _b;
+                }
+
+                newCanvasData[canvasIndex++] = r_;
+                newCanvasData[canvasIndex++] = g_;
+                newCanvasData[canvasIndex++] = b_;
+                newCanvasData[canvasIndex] += _n;
+                newCanvasData[canvasIndex] = newCanvasData[canvasIndex] > 255 ? 255 : newCanvasData[canvasIndex];
+                canvasIndex++;
+
+                /*if (imageData[i] > 0) newCanvasData[canvasIndex++] = imageData[i];
+                if (imageData[i + 1] > 0) newCanvasData[canvasIndex++] += imageData[i+1];
+                if (imageData[i + 2] > 0) newCanvasData[canvasIndex++] += imageData[i+2];
+                if (imageData[i + 3] > 0) newCanvasData[canvasIndex++] += imageData[i+3];
+                i+=4;*/
 			}
 
 			return rawCanvas;
