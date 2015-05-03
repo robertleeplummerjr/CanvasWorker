@@ -27,7 +27,10 @@
 
 <div id="catchphrase">
 	<h2>CanvasWorker</h2>
-	<blockquote>Render a ridiculous amount of images in web workers</blockquote>
+	<blockquote>
+        Render a ridiculous amount of images in web workers<br>
+        <span id="msg">(You are in a demo right now...)</span>
+    </blockquote>
 </div>
 
 <a href="https://github.com/robertleeplummerjr/CanvasWorker"><img style="position: fixed; top: 0; right: 0; border: 0;" src="fork-me.png" alt="Fork me on GitHub"></a>
@@ -36,6 +39,9 @@
 <script src="canvasworker.js"></script>
 <script>
 	var ui = document.getElementById('ui'),
+        msg = document.getElementById('msg'),
+        start = new Date(),
+        end,
         compose = [],
 		max = 15000,
 		i = 0,
@@ -53,9 +59,10 @@
 		element: ui,
 		compose: compose,
 		drawFinished: function(allFinished) {
-			if (allFinished === false) {
-				document.getElementById('pgloading').style.display = 'none';
-			}
+			if (allFinished) {
+                end = new Date();
+                msg.innerHTML = '(You are in a demo right now...  15,000 map points loaded in ' + ((end - start) / 1000) + ' seconds)';
+            }
 		}
 	});
 </script>
