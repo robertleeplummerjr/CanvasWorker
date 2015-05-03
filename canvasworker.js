@@ -220,20 +220,10 @@ var CanvasWorker = (function() {
 
 					//if inside tile
 					if (
-						c.x > tile.left
-						&& c.x < tile.right
-						&& c.y > tile.top
-						&& c.y < tile.bottom
-					) {
-						tile.compose.push(c);
-						sorted++;
-					}
-
-					else if (
-						(c.x + w) > tile.left
-						&& (c.x + w) < tile.right
-						&& (c.y + h) > tile.top
-						&& (c.y + h) < tile.bottom
+						c.x > tile.left - w
+						&& c.x < tile.right + w
+						&& c.y > tile.top - h
+						&& c.y < tile.bottom + h
 					) {
 						tile.compose.push(c);
 						sorted++;
