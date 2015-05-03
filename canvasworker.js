@@ -1,8 +1,14 @@
 var CanvasWorker = (function() {
 	"use strict";
 
+	/**
+	 *
+	 * @param {[String]} urls
+	 * @param {Object} [settings]
+	 * @constructor
+	 */
 	function CanvasWorker(urls, settings) {
-		this.setDefaults(settings);
+		this.setDefaults(settings || {});
 
 		var el = this.settings.element,
 			container = this.container = document.createElement('div'),
@@ -19,12 +25,35 @@ var CanvasWorker = (function() {
 		this.urlData = {};
 		this.images = [];
 		this.raw = [];
+		this.tiles = [];
 
-		this.buildTiles();
-		this.loadAllImages();
+		this
+			.buildTiles()
+			.loadAllImages();
 	}
 
 	CanvasWorker.prototype = {
+
+		/**
+		 * @type {Number}
+		 */
+		threadCount: 8,
+
+		/**
+		 * @type {Number}
+		 */
+		threadIndex: 0,
+
+		/**
+		 * @type {Object}
+		 */
+		activeThreads: {},
+
+		/**
+		 *
+		 * @param {Object} settings
+		 * @returns {CanvasWorker}
+		 */
 		setDefaults: function(settings) {
 			var defs = CanvasWorker.defaultSettings,
 				prop;
@@ -35,8 +64,13 @@ var CanvasWorker = (function() {
 
 			this.settings = settings;
 
-			return settings;
+			return this;
 		},
+
+		/**
+		 *
+		 * @returns {CanvasWorker}
+		 */
 		toRaw: function() {
 			var i = 0,
 				max = this.urls.length,
@@ -59,6 +93,11 @@ var CanvasWorker = (function() {
 
 			return this;
 		},
+
+		/**
+		 *
+		 * @returns {CanvasWorker}
+		 */
 		loadAllImages: function() {
 			var i = 0,
 				me = this,
@@ -78,18 +117,33 @@ var CanvasWorker = (function() {
 					});
 				})(i, urls[i]);
 			}
+
+			return this;
 		},
+
+		/**
+		 *
+		 * @param {[String]} url
+		 * @param {Function} [callback]
+		 * @returns {CanvasWorker}
+		 */
 		load: function(url, callback) {
 			var img = new Image(),
 				me = this;
 			img.onload = function() {
 				me.urlData[url] = img;
-				callback.call(me, img);
+
+				if (callback) callback.call(me, img);
 			};
 			img.src = url;
 
 			return this;
 		},
+
+		/**
+		 *
+		 * @returns {CanvasWorker}
+		 */
 		buildTiles: function() {
 			var s = this.settings,
 				el = this.container,
@@ -137,6 +191,11 @@ var CanvasWorker = (function() {
 
 			return this;
 		},
+
+		/**
+		 *
+		 * @returns {CanvasWorker}
+		 */
 		groupComposeToTiles: function() {
 			var s = this.settings,
 				compose = s.compose,
@@ -178,12 +237,17 @@ var CanvasWorker = (function() {
 			return this;
 
 		},
+
+		/**
+		 *
+		 * @param callback
+		 * @returns {CanvasWorker}
+		 */
 		render: function(callback) {
 
 			this.groupComposeToTiles();
 
-			var s = this.settings,
-				container = this.container,
+			var container = this.container,
 				tiles = this.tiles,
 				max = tiles.length,
 				success = 0,
@@ -224,15 +288,11 @@ var CanvasWorker = (function() {
 
 			return this;
 		},
-		tiles: [],
 
 		/**
-		 * @type {DocumentFragment}
+		 *
+		 * @returns {operative}
 		 */
-		tileFragment: null,
-		threadCount: 8,
-		threadIndex: 0,
-		activeThreads: {},
 		thread: function() {
 			var activeThread,
 				i = this.threadIndex;
@@ -252,16 +312,53 @@ var CanvasWorker = (function() {
 	};
 
 	CanvasWorker.defaultSettings = {
+		/**
+		 * @type {Function}
+		 */
 		drawFinished: function() {},
+
+		/**
+		 * @type {Object}
+		 */
 		tileSize: {
+
+			/**
+			 * @type {Number}
+			 */
 			width: 256,
+
+			/**
+			 * @type {Number}
+			 */
 			height: 256
 		},
+
+		/**
+		 * @type {[Object]}
+		 */
 		compose: null,
+
+		/**
+		 * @type {HTMLElement}
+		 */
 		element: null
 	};
 
+	/**
+	 * @namespace
+	 * @type {Object}
+	 */
 	CanvasWorker.threadScope = {
+
+		/**
+		 *
+		 * @param {[Object]} compose
+		 * @param {[ImageData]} rawImages
+		 * @param {ImageData} rawCanvas
+		 * @param {Number} tileX
+		 * @param {Number} tileY
+		 * @param {Function} [callback]
+		 */
 		drawEach: function(compose, rawImages, rawCanvas, tileX, tileY, callback) {
 			var i = 0,
 				max = compose.length,
@@ -272,14 +369,23 @@ var CanvasWorker = (function() {
 				rawCanvas = this.draw(rawCanvas, rawImages[c.image], c.x - tileX, c.y - tileY);
 			}
 
-			callback(rawCanvas);
+			if (callback) callback(rawCanvas);
 		},
+
+		/**
+		 *
+		 * @param {ImageData} rawCanvas
+		 * @param {ImageData} rawImage
+		 * @param {Number} x
+		 * @param {Number} y
+		 * @returns {ImageData}
+		 */
 		draw: function( rawCanvas, rawImage, x, y ) {
 			x = x >> 0;
 			y = y >> 0;
 
-			if (x === undefined) return;
-			if (y === undefined) return;
+			if (x === undefined) return rawCanvas;
+			if (y === undefined) return rawCanvas;
 
 			/**
 			 * Lookup x & y from index
@@ -300,10 +406,14 @@ var CanvasWorker = (function() {
 				imageX = 0,
 				imageY = 0,
 				canvasIndex,
+
+				//rgbn from image (there)
                 _r,
                 _g,
                 _b,
                 _n,
+
+				//rgbn from canvas (here)
                 r_,
                 g_,
                 b_,
@@ -321,12 +431,13 @@ var CanvasWorker = (function() {
 					continue;
 				}
 
-				/**
-				 * debug script
-				 * newCanvasData[i] = 200;
-				 * newCanvasData[i + 1] = 200;
-				 * newCanvasData[i + 2] = 200;
-				 * newCanvasData[i + 3] = 200;*/
+				/*
+				debug script
+				newCanvasData[i] = 200;
+				newCanvasData[i + 1] = 200;
+				newCanvasData[i + 2] = 200;
+				newCanvasData[i + 3] = 200;
+				*/
 
                 _r = imageData[i++];
                 _g = imageData[i++];
