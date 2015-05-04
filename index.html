@@ -3,6 +3,7 @@
 <head lang="en">
 	<meta charset="UTF-8">
 	<title>CanvasWorker</title>
+	<link href="bower_components/Leaflet.awesome-markers/dist/leaflet.awesome-markers.css" rel="stylesheet" type="text/css">
 	<style>
 		body {
 			padding-left: auto;
@@ -34,14 +35,20 @@
 </div>
 
 <a href="https://github.com/robertleeplummerjr/CanvasWorker"><img style="position: fixed; top: 0; right: 0; border: 0;" src="fork-me.png" alt="Fork me on GitHub"></a>
+
+<div id="sprite-pit" style="opacity: 0.01"></div>
 </body>
+
 <script src="bower_components/operative/dist/operative.js"></script>
 <script src="canvasworker.js"></script>
 <script>
 	var ui = document.getElementById('ui'),
         msg = document.getElementById('msg'),
+		spritePit = document.getElementById('sprite-pit'),
         start = new Date(),
         end,
+		images = [],
+		drawn = 0,
         compose = [],
 		max = 15000,
 		i = 0,
@@ -49,13 +56,13 @@
 
 	for (;i < max;i++) {
 		compose.push({
-			image: 0,
+			image: (Math.random() * 18) >> 0,
 			x: Math.random() * ui.clientWidth,
 			y: Math.random() * ui.clientHeight
 		});
 	}
 
-	cw = new CanvasWorker(['marker-icon.png'], {
+	/*cw = new CanvasWorker(['marker-icon.png'], {
 		element: ui,
 		compose: compose,
 		drawFinished: function(allFinished) {
@@ -64,6 +71,84 @@
                 msg.innerHTML = '(You are in a demo right now...  15,000 map points loaded in ' + ((end - start) / 1000) + ' seconds)';
             }
 		}
-	});
+	});*/
+
+	function unSprite(className) {
+		var div = document.createElement('div'),
+			img = new Image(),
+			unSpriteImg = new Image(),
+			unSpriteCanvas = document.createElement('canvas');
+
+		div.className = className;
+		spritePit.appendChild(div);
+		var style = window.getComputedStyle(div);
+		images.push(unSpriteImg);
+		img.onload = function() {
+			drawn++;
+
+			var canvas = document.createElement('canvas'),
+				context,
+				backgroundPostion = style.backgroundPosition.split(' '),
+				w = style.width.replace('px', '') * 1,
+				h = style.height.replace('px', '') * 1,
+				x = Math.abs(backgroundPostion[0].replace('px', '') * 1),
+				y = Math.abs(backgroundPostion[1].replace('px', '') * 1);
+
+			console.log([w,h,x,y]);
+			canvas.width = this.width;
+			canvas.height = this.height;
+
+			context = canvas.getContext('2d');
+			context.clearRect(0, 0, canvas.width, canvas.height);
+			context.drawImage(this, 0, 0);
+			unSpriteCanvas.getContext('2d').putImageData(context.getImageData(
+				x,
+				y,
+				unSpriteCanvas.width = w,
+				unSpriteCanvas.height = h
+			), 0, 0);
+
+			unSpriteImg.src = unSpriteCanvas.toDataURL();
+
+			if (drawn === images.length) {
+				cw = new CanvasWorker(images, {
+					element: ui,
+					compose: compose,
+					drawFinished: function(allFinished) {
+						if (allFinished) {
+							end = new Date();
+							msg.innerHTML = '(You are in a demo right now...  15,000 map points loaded in ' + ((end - start) / 1000) + ' seconds)';
+						}
+					}
+				});
+			}
+		};
+		img.src = style.backgroundImage
+				.replace(/"/g, '')
+				.replace(/^url[(]/, '')
+				.replace(/[)]$/, '');
+
+		return img;
+	}
+
+	unSprite('awesome-marker awesome-marker-icon-red');
+	unSprite('awesome-marker awesome-marker-icon-darkred');
+	unSprite('awesome-marker awesome-marker-icon-lightred');
+	unSprite('awesome-marker awesome-marker-icon-orange');
+	unSprite('awesome-marker awesome-marker-icon-beige');
+	unSprite('awesome-marker awesome-marker-icon-green');
+	unSprite('awesome-marker awesome-marker-icon-darkgreen');
+	unSprite('awesome-marker awesome-marker-icon-lightgreen');
+	unSprite('awesome-marker awesome-marker-icon-blue');
+	unSprite('awesome-marker awesome-marker-icon-darkblue');
+	unSprite('awesome-marker awesome-marker-icon-lightblue');
+	unSprite('awesome-marker awesome-marker-icon-purple');
+	unSprite('awesome-marker awesome-marker-icon-darkpurple');
+	unSprite('awesome-marker awesome-marker-icon-pink');
+	unSprite('awesome-marker awesome-marker-icon-cadetblue');
+	unSprite('awesome-marker awesome-marker-icon-white');
+	unSprite('awesome-marker awesome-marker-icon-gray');
+	unSprite('awesome-marker awesome-marker-icon-lightgray');
+	unSprite('awesome-marker awesome-marker-icon-black');
 </script>
 </html>

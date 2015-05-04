@@ -22,6 +22,7 @@
     "tests"
   ],
   "dependencies": {
-    "operative": "~0.4.4"
+    "operative": "~0.4.4",
+    "Leaflet.awesome-markers": "~2.0.2"
   }
 }

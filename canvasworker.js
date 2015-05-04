@@ -3,11 +3,11 @@ var CanvasWorker = (function() {
 
 	/**
 	 *
-	 * @param {[String]} urls
+	 * @param {[String]|[HTMLElement]} urls
 	 * @param {Object} [settings]
 	 * @constructor
 	 */
-	function CanvasWorker(urls, settings) {
+	function CanvasWorker(urlsOrElements, settings) {
 		this.setDefaults(settings || {});
 
 		var el = this.settings.element,
@@ -21,7 +21,8 @@ var CanvasWorker = (function() {
 
 		el.appendChild(container);
 
-		this.urls = urls;
+		this.urls = [];
+		this.urlsOrElements = urlsOrElements;
 		this.urlData = {};
 		this.images = [];
 		this.raw = [];
@@ -73,7 +74,7 @@ var CanvasWorker = (function() {
 		 */
 		toRaw: function() {
 			var i = 0,
-				max = this.urls.length,
+				max = this.images.length,
 				img,
 				canvas,
 				context;
@@ -101,21 +102,33 @@ var CanvasWorker = (function() {
 		loadAllImages: function() {
 			var i = 0,
 				me = this,
-				urls = this.urls,
-				max = urls.length,
+				urlsOrElements = this.urlsOrElements,
+				max = urlsOrElements.length,
 				finished = 0;
 
 			for (;i < max; i++) {
-				(function(i, url) {
-					me.load(url, function(result) {
-						me.images[i] = result;
+				(function (i, urlOrElement) {
+					var url;
+					if (typeof urlOrElement === 'string') {
+						url = urlOrElement;
+
+						me.load(url, function (result) {
+							me.images[i] = result;
+							finished++;
+							if (finished === max) {
+								me.toRaw();
+								me.render(me.settings.drawFinished);
+							}
+						});
+					} else {
+						me.images[i] = urlOrElement;
 						finished++;
 						if (finished === max) {
 							me.toRaw();
 							me.render(me.settings.drawFinished);
 						}
-					});
-				})(i, urls[i]);
+					}
+				})(i, urlsOrElements[i]);
 			}
 
 			return this;
@@ -123,7 +136,7 @@ var CanvasWorker = (function() {
 
 		/**
 		 *
-		 * @param {[String]} url
+		 * @param {String} url
 		 * @param {Function} [callback]
 		 * @returns {CanvasWorker}
 		 */
