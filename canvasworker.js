@@ -3,27 +3,28 @@ var CanvasWorker = (function() {
 
 	/**
 	 *
-	 * @param {[String]|[HTMLElement]} urls
+	 * @param {[String]|[HTMLElement]} urlsOrElements
 	 * @param {Object} [settings]
 	 * @constructor
 	 */
 	function CanvasWorker(urlsOrElements, settings) {
 		this.setDefaults(settings || {});
 
-		var el = this.settings.element,
+		var s = this.settings,
+			el = s.element,
 			container = this.container = document.createElement('div'),
 			style = container.style;
 
-		style.overflow = 'hidden';
-		style.position = 'absolute';
-		style.width = el.clientWidth + 'px';
-		style.height = el.clientHeight + 'px';
+		if (el) {
+			style.overflow = 'hidden';
+			style.position = 'absolute';
+			style.width = (s.width = el.clientWidth) + 'px';
+			style.height = (s.height = el.clientHeight) + 'px';
 
-		el.appendChild(container);
+			el.appendChild(container);
+		}
 
-		this.urls = [];
 		this.urlsOrElements = urlsOrElements;
-		this.urlData = {};
 		this.images = [];
 		this.raw = [];
 		this.tiles = [];
@@ -74,13 +75,14 @@ var CanvasWorker = (function() {
 		 */
 		toRaw: function() {
 			var i = 0,
-				max = this.images.length,
+				images = this.images,
+				max = images.length,
 				img,
 				canvas,
 				context;
 
 			for (;i < max; i++) {
-				img = this.images[i];
+				img = images[i];
 				canvas = document.createElement("canvas");
 
 				canvas.width = img.width;
@@ -108,24 +110,27 @@ var CanvasWorker = (function() {
 
 			for (;i < max; i++) {
 				(function (i, urlOrElement) {
-					var url;
+					var url, element;
 					if (typeof urlOrElement === 'string') {
 						url = urlOrElement;
 
-						me.load(url, function (result) {
-							me.images[i] = result;
+						me.load(url, function (element) {
+							me.images[i] = element;
 							finished++;
 							if (finished === max) {
-								me.toRaw();
-								me.render(me.settings.drawFinished);
+								me
+									.toRaw()
+									.render(me.settings.drawFinished);
 							}
 						});
 					} else {
-						me.images[i] = urlOrElement;
+						element = urlOrElement;
+						me.images[i] = element;
 						finished++;
 						if (finished === max) {
-							me.toRaw();
-							me.render(me.settings.drawFinished);
+							me
+								.toRaw()
+								.render(me.settings.drawFinished);
 						}
 					}
 				})(i, urlsOrElements[i]);
@@ -144,8 +149,6 @@ var CanvasWorker = (function() {
 			var img = new Image(),
 				me = this;
 			img.onload = function() {
-				me.urlData[url] = img;
-
 				if (callback) callback.call(me, img);
 			};
 			img.src = url;
@@ -159,11 +162,10 @@ var CanvasWorker = (function() {
 		 */
 		buildTiles: function() {
 			var s = this.settings,
-				el = this.container,
-				w = s.tileSize.width,
-				h = s.tileSize.height,
-				columnMax = el.clientWidth / w,
-				rowMax = el.clientHeight / h,
+				w = s.tileWidth,
+				h = s.tileHeight,
+				columnMax = s.width / w,
+				rowMax = s.height / h,
 				columnIndex,
 				rowIndex = 0,
 				tiles = this.tiles,
@@ -184,11 +186,11 @@ var CanvasWorker = (function() {
 					tile.height = h;
 					tile.compose = [];
 
-					tile.setAttribute('left', w * columnIndex);
-					tile.setAttribute('right', (w * columnIndex) + w);
-					tile.setAttribute('top', h * rowIndex);
-					tile.setAttribute('bottom', (h * rowIndex) + h);
-					tile.setAttribute('data-index', tiles.length);
+					tile.setAttribute('left', (w * columnIndex).toString());
+					tile.setAttribute('right', ((w * columnIndex) + w).toString());
+					tile.setAttribute('top', (h * rowIndex).toString());
+					tile.setAttribute('bottom', ((h * rowIndex) + h).toString());
+					tile.setAttribute('data-index', tiles.length.toString());
 
 					style = tile.style;
                     style['opacity'] = 0.01;
@@ -245,7 +247,7 @@ var CanvasWorker = (function() {
 			}
 
 			if (sorted < compose.length) {
-				throw new Error('Missed by: ' + (compose.length - sorted));
+				//throw new Error('Missed by: ' + (compose.length - sorted));
 			}
 			return this;
 
@@ -269,32 +271,42 @@ var CanvasWorker = (function() {
 
 			for (;i< max;i++) {
 				(function(canvas) {
-
 					var thread = me.thread(),
 						context = canvas.getContext('2d'),
 						rawCanvas,
-						compose = canvas.compose;
+						compose = canvas.compose,
+						doDraw;
 
 					context.clearRect(0, 0, canvas.width, canvas.height);
 
 					rawCanvas = context.getImageData(0, 0, canvas.width, canvas.height);
 
 					thread.drawEach(compose, me.raw, rawCanvas, canvas.left, canvas.top, function (merged) {
+						canvas.style.transition = 'opacity 1s';
+						canvas.style['-webkit-transition'] = 'opacity 1s';
+						canvas.style.opacity = '0.01';
 						context.putImageData(merged, 0, 0);
-
 						container.appendChild(canvas);
-
-                        setTimeout(function() {
-                            canvas.style.opacity = '1';
-                        },0);
-
 						success++;
 
-						callback(false);
+						canvas.addTo = function(map) {
+							var dataUrl = canvas.toDataURL(),
+								ne = map.containerPointToLatLng(L.point(canvas.left + canvas.width, canvas.top)),
+								sw = map.containerPointToLatLng(L.point(canvas.left, canvas.top + canvas.height)),
+								bounds = L.latLngBounds(sw, ne);
+
+							return L.imageOverlay(dataUrl, bounds).addTo(map);
+						};
 
 						if (success === max) {
-							callback(true);
+							doDraw = callback(canvas, context, true);
+						} else {
+							doDraw = callback(canvas, context, false);
 						}
+
+						setTimeout(function () {
+							canvas.style.opacity = '1';
+						}, 0);
 					});
 				})(tiles[i]);
 			}
@@ -331,20 +343,24 @@ var CanvasWorker = (function() {
 		drawFinished: function() {},
 
 		/**
-		 * @type {Object}
+		 * @type {Number}
 		 */
-		tileSize: {
+		tileWidth: 256,
 
-			/**
-			 * @type {Number}
-			 */
-			width: 256,
+		/**
+		 * @type {Number}
+		 */
+		tileHeight: 256,
 
-			/**
-			 * @type {Number}
-			 */
-			height: 256
-		},
+		/**
+		 * @type {Number} used if no element is specified
+		 */
+		width: 0,
+
+		/**
+		 * @type {Number} used if no element is specified
+		 */
+		height: 0,
 
 		/**
 		 * @type {[Object]}

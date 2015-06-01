@@ -3,11 +3,13 @@
 <head lang="en">
 	<meta charset="UTF-8">
 	<title>CanvasWorker</title>
+	<link href="bower_components/leaflet/dist/leaflet.css" rel="stylesheet" type="text/css">
 	<link href="bower_components/Leaflet.awesome-markers/dist/leaflet.awesome-markers.css" rel="stylesheet" type="text/css">
 	<style>
 		body {
 			padding-left: auto;
 			padding-right: auto;
+			margin: 0;
 		}
 
 		#catchphrase {
@@ -23,9 +25,7 @@
 	</style>
 </head>
 <body>
-
-<div id="ui" style="height: 800px"></div>
-
+<div id="map" style="position: absolute; height: 800px; width: 100%"></div>
 <div id="catchphrase">
 	<h2>CanvasWorker</h2>
 	<blockquote>
@@ -36,119 +36,137 @@
 
 <a href="https://github.com/robertleeplummerjr/CanvasWorker"><img style="position: fixed; top: 0; right: 0; border: 0;" src="fork-me.png" alt="Fork me on GitHub"></a>
 
-<div id="sprite-pit" style="opacity: 0.01"></div>
+<div id="sprite-pit" style="opacity: 0.01; "></div>
 </body>
-
+<script src="bower_components/leaflet/dist/leaflet.js"></script>
 <script src="bower_components/operative/dist/operative.js"></script>
 <script src="canvasworker.js"></script>
 <script>
-	var ui = document.getElementById('ui'),
-        msg = document.getElementById('msg'),
-		spritePit = document.getElementById('sprite-pit'),
+
+	function randBetween(min, max) {
+		return Math.random() * (max - min) + min;
+	}
+	var height = window.innerHeight,
+		width =  window.innerWidth,
+		msg = document.getElementById('msg'),
         start = new Date(),
         end,
-		images = [],
-		drawn = 0,
         compose = [],
 		max = 15000,
-		i = 0,
-		cw;
+		i = 0;
 
 	for (;i < max;i++) {
 		compose.push({
 			image: (Math.random() * 18) >> 0,
-			x: Math.random() * ui.clientWidth,
-			y: Math.random() * ui.clientHeight
+			x: randBetween(20, window.innerWidth - 40),
+			y: randBetween(20, window.innerHeight - 60)
 		});
 	}
 
-	/*cw = new CanvasWorker(['marker-icon.png'], {
-		element: ui,
-		compose: compose,
-		drawFinished: function(allFinished) {
-			if (allFinished) {
-                end = new Date();
-                msg.innerHTML = '(You are in a demo right now...  15,000 map points loaded in ' + ((end - start) / 1000) + ' seconds)';
-            }
-		}
-	});*/
+	function unSprite() {
+		var i = 0,
+			className,
+			max = arguments.length - 1,
+			callback = arguments[arguments.length - 1],
+			drawn = 0,
+			images = [];
 
-	function unSprite(className) {
-		var div = document.createElement('div'),
-			img = new Image(),
-			unSpriteImg = new Image(),
-			unSpriteCanvas = document.createElement('canvas');
+		for(;i < max; i++) {
+			className = arguments[i];
 
-		div.className = className;
-		spritePit.appendChild(div);
-		var style = window.getComputedStyle(div);
-		images.push(unSpriteImg);
-		img.onload = function() {
-			drawn++;
+			(function() {
+				var div = document.createElement('div'),
+					img = new Image(),
+					unSpriteImg = new Image(),
+					unSpriteCanvas = document.createElement('canvas'),
+					style;
 
-			var canvas = document.createElement('canvas'),
-				context,
-				backgroundPostion = style.backgroundPosition.split(' '),
-				w = style.width.replace('px', '') * 1,
-				h = style.height.replace('px', '') * 1,
-				x = Math.abs(backgroundPostion[0].replace('px', '') * 1),
-				y = Math.abs(backgroundPostion[1].replace('px', '') * 1);
+				div.className = className;
+				style = window.getComputedStyle(div);
+				images.push(unSpriteImg);
+				img.onload = function () {
+					drawn++;
 
-			console.log([w,h,x,y]);
-			canvas.width = this.width;
-			canvas.height = this.height;
+					var canvas = document.createElement('canvas'),
+						context,
+						backgroundPosition = style.backgroundPosition.split(' '),
+						w = style.width.replace('px', '') * 1,
+						h = style.height.replace('px', '') * 1,
+						x = Math.abs(backgroundPosition[0].replace('px', '') * 1),
+						y = Math.abs(backgroundPosition[1].replace('px', '') * 1);
 
-			context = canvas.getContext('2d');
-			context.clearRect(0, 0, canvas.width, canvas.height);
-			context.drawImage(this, 0, 0);
-			unSpriteCanvas.getContext('2d').putImageData(context.getImageData(
-				x,
-				y,
-				unSpriteCanvas.width = w,
-				unSpriteCanvas.height = h
-			), 0, 0);
+					canvas.width = this.width;
+					canvas.height = this.height;
 
-			unSpriteImg.src = unSpriteCanvas.toDataURL();
+					context = canvas.getContext('2d');
+					context.clearRect(0, 0, canvas.width, canvas.height);
+					context.drawImage(this, 0, 0);
+					unSpriteCanvas.getContext('2d').putImageData(context.getImageData(
+						x,
+						y,
+						unSpriteCanvas.width = w,
+						unSpriteCanvas.height = h
+					), 0, 0);
 
-			if (drawn === images.length) {
-				cw = new CanvasWorker(images, {
-					element: ui,
-					compose: compose,
-					drawFinished: function(allFinished) {
-						if (allFinished) {
-							end = new Date();
-							msg.innerHTML = '(You are in a demo right now...  15,000 map points loaded in ' + ((end - start) / 1000) + ' seconds)';
-						}
+					unSpriteImg.src = unSpriteCanvas.toDataURL();
+
+					if (drawn === max) {
+						callback(images);
 					}
-				});
-			}
-		};
-		img.src = style.backgroundImage
-				.replace(/"/g, '')
-				.replace(/^url[(]/, '')
-				.replace(/[)]$/, '');
+				};
 
-		return img;
+				img.src = style.backgroundImage
+					.replace(/"/g, '')
+					.replace(/^url[(]/, '')
+					.replace(/[)]$/, '');
+			})();
+		}
 	}
 
-	unSprite('awesome-marker awesome-marker-icon-red');
-	unSprite('awesome-marker awesome-marker-icon-darkred');
-	unSprite('awesome-marker awesome-marker-icon-lightred');
-	unSprite('awesome-marker awesome-marker-icon-orange');
-	unSprite('awesome-marker awesome-marker-icon-beige');
-	unSprite('awesome-marker awesome-marker-icon-green');
-	unSprite('awesome-marker awesome-marker-icon-darkgreen');
-	unSprite('awesome-marker awesome-marker-icon-lightgreen');
-	unSprite('awesome-marker awesome-marker-icon-blue');
-	unSprite('awesome-marker awesome-marker-icon-darkblue');
-	unSprite('awesome-marker awesome-marker-icon-lightblue');
-	unSprite('awesome-marker awesome-marker-icon-purple');
-	unSprite('awesome-marker awesome-marker-icon-darkpurple');
-	unSprite('awesome-marker awesome-marker-icon-pink');
-	unSprite('awesome-marker awesome-marker-icon-cadetblue');
-	unSprite('awesome-marker awesome-marker-icon-white');
-	unSprite('awesome-marker awesome-marker-icon-gray');
-	unSprite('awesome-marker awesome-marker-icon-lightgray');
-	unSprite('awesome-marker awesome-marker-icon-black');
+	// Chicago, that happening town!
+	var map = L.map('map').setView([41.8762302,-87.647934], 13);
+
+	// add an OpenStreetMap tile layer
+	L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+		attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+	}).addTo(map);
+
+	unSprite(
+		'awesome-marker awesome-marker-icon-red',
+		'awesome-marker awesome-marker-icon-darkred',
+		'awesome-marker awesome-marker-icon-lightred',
+		'awesome-marker awesome-marker-icon-orange',
+		'awesome-marker awesome-marker-icon-beige',
+		'awesome-marker awesome-marker-icon-green',
+		'awesome-marker awesome-marker-icon-darkgreen',
+		'awesome-marker awesome-marker-icon-lightgreen',
+		'awesome-marker awesome-marker-icon-blue',
+		'awesome-marker awesome-marker-icon-darkblue',
+		'awesome-marker awesome-marker-icon-lightblue',
+		'awesome-marker awesome-marker-icon-purple',
+		'awesome-marker awesome-marker-icon-darkpurple',
+		'awesome-marker awesome-marker-icon-pink',
+		'awesome-marker awesome-marker-icon-cadetblue',
+		'awesome-marker awesome-marker-icon-white',
+		'awesome-marker awesome-marker-icon-gray',
+		'awesome-marker awesome-marker-icon-lightgray',
+		'awesome-marker awesome-marker-icon-black',
+		function(images) {
+			new CanvasWorker(images, {
+				compose: compose,
+				height: height,
+				width: width,
+				drawFinished: function (canvas, context, allFinished) {
+					canvas.addTo(map);
+
+					if (allFinished) {
+						end = new Date();
+						msg.innerHTML = '(You are in a demo right now...  15,000 map points loaded in ' + ((end - start) / 1000) + ' seconds)';
+					}
+
+					return false;
+				}
+			});
+		});
 </script>
 </html>

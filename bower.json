@@ -23,6 +23,7 @@
   ],
   "dependencies": {
     "operative": "~0.4.4",
-    "Leaflet.awesome-markers": "~2.0.2"
+    "Leaflet.awesome-markers": "~2.0.2",
+    "leaflet": "~0.7.3"
   }
 }
