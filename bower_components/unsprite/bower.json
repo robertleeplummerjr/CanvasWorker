@@ -1,0 +1,25 @@
+{
+  "name": "unsprite",
+  "main": "unsprite.js",
+  "version": "0.0.0",
+  "homepage": "https://github.com/robertleeplummerjr/unsprite",
+  "authors": [
+    "Robert Plummer <robertleeplummerjr@gmail.com>"
+  ],
+  "description": "Decompose css sprite images as strings",
+  "keywords": [
+    "css",
+    "sprite",
+    "decompose",
+    "unsprite",
+    "js"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
