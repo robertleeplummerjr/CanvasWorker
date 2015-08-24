@@ -35,22 +35,6 @@ var CanvasWorker = (function() {
 	}
 
 	CanvasWorker.prototype = {
-
-		/**
-		 * @type {Number}
-		 */
-		threadCount: 8,
-
-		/**
-		 * @type {Number}
-		 */
-		threadIndex: 0,
-
-		/**
-		 * @type {Object}
-		 */
-		activeThreads: {},
-
 		/**
 		 *
 		 * @param {Object} settings
@@ -79,19 +63,28 @@ var CanvasWorker = (function() {
 				max = images.length,
 				img,
 				canvas,
-				context;
+				context,
+        res = unsprite.res();
 
 			for (;i < max; i++) {
 				img = images[i];
 				canvas = document.createElement("canvas");
 
-				canvas.width = img.width;
-				canvas.height = img.height;
+				//resize if needed
+        canvas.width = img.width / res;
+				canvas.height = img.height / res;
+
 				context = canvas.getContext('2d');
-				context.clearRect(0, 0, img.width, img.height);
+				context.clearRect(0, 0, canvas.width, canvas.height);
+
+        //rescale if needed
+        if (res > 1) {
+          context.scale(1 / res, 1 / res);
+        }
+
 				context.drawImage(img, 0, 0);
 
-				this.raw[i] = context.getImageData(0, 0, img.width, img.height);
+				this.raw[i] = context.getImageData(0, 0, canvas.width, canvas.height);
 			}
 
 			return this;
@@ -316,21 +309,23 @@ var CanvasWorker = (function() {
 
 		/**
 		 *
-		 * @returns {operative}
+		 * @returns {operative|Object}
 		 */
 		thread: function() {
+      if (this.settings.threadCount === 0) return CanvasWorker.threadScope;
+
 			var activeThread,
-				i = this.threadIndex;
+				i = CanvasWorker.threadIndex;
 
-			if (i >= this.threadCount) i = this.threadIndex = 0;
+			if (i >= this.settings.threadCount) i = CanvasWorker.threadIndex = 0;
 
-			if (this.activeThreads[i] === undefined) {
-				this.activeThreads[i] = operative(CanvasWorker.threadScope);
+			if (CanvasWorker.activeThreads[i] === undefined) {
+        CanvasWorker.activeThreads[i] = operative(CanvasWorker.threadScope);
 			}
 
-			activeThread = this.activeThreads[i];
+			activeThread = CanvasWorker.activeThreads[i];
 
-			this.threadIndex++;
+      CanvasWorker.threadIndex++;
 
 			return activeThread;
 		}
@@ -370,7 +365,12 @@ var CanvasWorker = (function() {
 		/**
 		 * @type {HTMLElement}
 		 */
-		element: null
+		element: null,
+
+    /**
+     * @type {Number}
+     */
+    threadCount: 8
 	};
 
 	/**
@@ -435,18 +435,19 @@ var CanvasWorker = (function() {
 				imageX = 0,
 				imageY = 0,
 				canvasIndex,
+        norm = 1 / 255,
 
-				//rgbn from image (there)
-                _r,
-                _g,
-                _b,
-                _n,
+        //rgbn from image (there)
+        _r,
+        _g,
+        _b,
+        _n,
 
-				//rgbn from canvas (here)
-                r_,
-                g_,
-                b_,
-                n_;
+        //rgbn from canvas (here)
+        r_,
+        g_,
+        b_,
+        n_;
 
 			for (;i < max;) { // iterate through image bytes
 				imageX = (i / 4) % rawImage.width;
@@ -460,58 +461,53 @@ var CanvasWorker = (function() {
 					continue;
 				}
 
-				/*
-				debug script
-				newCanvasData[i] = 200;
-				newCanvasData[i + 1] = 200;
-				newCanvasData[i + 2] = 200;
-				newCanvasData[i + 3] = 200;
-				*/
+        _r = imageData[i++];
+        _g = imageData[i++];
+        _b = imageData[i++];
+        _n = imageData[i++];
 
-                _r = imageData[i++];
-                _g = imageData[i++];
-                _b = imageData[i++];
-                _n = imageData[i++];
+        r_ = newCanvasData[canvasIndex];
+        g_ = newCanvasData[canvasIndex+1];
+        b_ = newCanvasData[canvasIndex+2];
+        n_ = newCanvasData[canvasIndex+3];
 
-                r_ = newCanvasData[canvasIndex];
-                g_ = newCanvasData[canvasIndex+1];
-                b_ = newCanvasData[canvasIndex+2];
-                n_ = newCanvasData[canvasIndex+3];
+        n_ += _n;
+        n_ = Math.min(n_, 255);
 
-                //outputRed = (foregroundRed * foregroundAlpha) + (backgroundRed * (1.0 - foregroundAlpha));
-                if (_n === 255) {
-	                r_ = _r;
-	                g_ = _g;
-	                b_ = _b;
-                } else if (_n > 1) {
-	                r_ = (r_ + _r) / 2;
-	                g_ = (g_ + _g) / 2;
-	                b_ = (b_ + _b) / 2;
-                } else {
-	                r_ = Math.min(r_ + _r, 255);
-	                g_ = Math.min(g_ + _g, 255);
-	                b_ = Math.min(b_ + _b, 255);
-	                /*g_ = (_g * _n) + (g_ * (1 - _n));
-	                b_ = (_b * _n) + (b_ * (1 - _n));*/
-                }
+        //first off, if _n (foreground opacity) is 255, that means it superceedes everything else
+        if (_n === 255) {
+          r_ = _r;
+          g_ = _g;
+          b_ = _b;
+        }
 
-				n_ += _n;
+        //else if foreground is more than 0, then it needs to be blended
+        //outputRed = (foregroundRed * foregroundAlpha) + (backgroundRed * (1.0 - foregroundAlpha));
+        else if (_n > 0) {
+          r_ = (_r * _n * norm) + (r_ * (1 - (_n * norm)));
+          b_ = (_b * _n * norm) + (b_ * (1 - (_n * norm)));
+          g_ = (_g * _n * norm) + (g_ * (1 - (_n * norm)));
+        }
 
-                newCanvasData[canvasIndex++] = r_;
-                newCanvasData[canvasIndex++] = g_;
-                newCanvasData[canvasIndex++] = b_;
-                newCanvasData[canvasIndex++] = n_ < 255 ? n_ : 255;
+        //if all else fails
+        else {
+          r_ = Math.min(r_ + _r, 255);
+          g_ = Math.min(g_ + _g, 255);
+          b_ = Math.min(b_ + _b, 255);
+        }
 
-                /*if (imageData[i] > 0) newCanvasData[canvasIndex++] = imageData[i];
-                if (imageData[i + 1] > 0) newCanvasData[canvasIndex++] += imageData[i+1];
-                if (imageData[i + 2] > 0) newCanvasData[canvasIndex++] += imageData[i+2];
-                if (imageData[i + 3] > 0) newCanvasData[canvasIndex++] += imageData[i+3];
-                i+=4;*/
+        newCanvasData[canvasIndex++] = r_;
+        newCanvasData[canvasIndex++] = g_;
+        newCanvasData[canvasIndex++] = b_;
+        newCanvasData[canvasIndex++] = n_;
 			}
 
 			return rawCanvas;
 		}
 	};
+
+  CanvasWorker.activeThreads = {};
+  CanvasWorker.threadIndex = 0;
 
 	return CanvasWorker;
 })();
