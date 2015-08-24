@@ -72,8 +72,8 @@ function unsprite() {
   }
 }
 unsprite.res = function res() {
-  if (window.hasOwnProperty('devicePixelRation') && window.devicePixelRation > 1) {
-    return window.devicePixelRation;
+  if (window.hasOwnProperty('devicePixelRatio') && window.devicePixelRatio > 1) {
+    return window.devicePixelRatio;
   } else if (window.matchMedia && window.matchMedia("(-webkit-min-device-pixel-ratio: 1.5),(-moz-min-device-pixel-ratio: 1.5),(min-device-pixel-ratio: 1.5)").matches) {
     return 1.5;
   }
