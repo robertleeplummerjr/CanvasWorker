@@ -64,6 +64,8 @@
 		});
 	}
 
+  compose.sort(function(a, b){ return a.y - b.y });
+
 	// Chicago, that happening town!
 	var map = L.map('map').setView([41.8762302,-87.647934], 13);
 
