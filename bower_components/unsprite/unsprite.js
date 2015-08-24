@@ -6,10 +6,7 @@ function unsprite() {
     drawn = 0,
     images = [],
     body = document.querySelector('body'),
-    isRetina = (
-      window.devicePixelRatio > 1 ||
-      (window.matchMedia && window.matchMedia("(-webkit-min-device-pixel-ratio: 1.5),(-moz-min-device-pixel-ratio: 1.5),(min-device-pixel-ratio: 1.5)").matches)
-    );
+    res = unsprite.res();
 
   if (callback === undefined) throw new Error('Not enough arguments');
 
@@ -34,8 +31,8 @@ function unsprite() {
         var canvas = document.createElement('canvas'),
           context,
           backgroundPosition = style.backgroundPosition.split(' '),
-          w = style.width.replace('px', '') * (isRetina ? 1.5 : 1),
-          h = style.height.replace('px', '') * (isRetina ? 1.5 : 1),
+          w = style.width.replace('px', '') * res,
+          h = style.height.replace('px', '') * res,
           x = Math.abs(backgroundPosition[0].replace('px', '') * 1),
           y = Math.abs(backgroundPosition[1].replace('px', '') * 1);
 
@@ -74,3 +71,11 @@ function unsprite() {
     })();
   }
 }
+unsprite.res = function res() {
+  if (window.hasOwnProperty('devicePixelRation') && window.devicePixelRation > 1) {
+    return window.devicePixelRation;
+  } else if (window.matchMedia && window.matchMedia("(-webkit-min-device-pixel-ratio: 1.5),(-moz-min-device-pixel-ratio: 1.5),(min-device-pixel-ratio: 1.5)").matches) {
+    return 1.5;
+  }
+  return 1;
+};
