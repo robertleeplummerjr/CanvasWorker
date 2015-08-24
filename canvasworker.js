@@ -71,11 +71,11 @@ var CanvasWorker = (function() {
 				canvas = document.createElement("canvas");
 
 				//resize if needed
-        canvas.width = img.width / res;
-				canvas.height = img.height / res;
+        var w = canvas.width = img.width / res,
+				  h = canvas.height = img.height / res;
 
 				context = canvas.getContext('2d');
-				context.clearRect(0, 0, canvas.width, canvas.height);
+				context.clearRect(0, 0, w, h);
 
         //rescale if needed
         if (res > 1) {
@@ -84,7 +84,7 @@ var CanvasWorker = (function() {
 
 				context.drawImage(img, 0, 0);
 
-				this.raw[i] = context.getImageData(0, 0, canvas.width, canvas.height);
+				this.raw[i] = context.getImageData(0, 0, w, h);
 			}
 
 			return this;
