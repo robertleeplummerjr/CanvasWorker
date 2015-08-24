@@ -33,8 +33,8 @@ function unsprite() {
           backgroundPosition = style.backgroundPosition.split(' '),
           w = style.width.replace('px', '') * res,
           h = style.height.replace('px', '') * res,
-          x = Math.abs(backgroundPosition[0].replace('px', '') * 1),
-          y = Math.abs(backgroundPosition[1].replace('px', '') * 1);
+          x = Math.abs(backgroundPosition[0].replace('px', '') * res),
+          y = Math.abs(backgroundPosition[1].replace('px', '') * res);
 
         canvas.width = this.width;
         canvas.height = this.height;
