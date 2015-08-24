@@ -5,7 +5,11 @@ function unsprite() {
     callback = arguments[max],
     drawn = 0,
     images = [],
-    body = document.querySelector('body');
+    body = document.querySelector('body'),
+    isRetina = (
+      window.devicePixelRatio > 1 ||
+      (window.matchMedia && window.matchMedia("(-webkit-min-device-pixel-ratio: 1.5),(-moz-min-device-pixel-ratio: 1.5),(min-device-pixel-ratio: 1.5)").matches)
+    );
 
   if (callback === undefined) throw new Error('Not enough arguments');
 
@@ -30,8 +34,8 @@ function unsprite() {
         var canvas = document.createElement('canvas'),
           context,
           backgroundPosition = style.backgroundPosition.split(' '),
-          w = style.width.replace('px', '') * 1,
-          h = style.height.replace('px', '') * 1,
+          w = style.width.replace('px', '') * (isRetina ? 1.5 : 1),
+          h = style.height.replace('px', '') * (isRetina ? 1.5 : 1),
           x = Math.abs(backgroundPosition[0].replace('px', '') * 1),
           y = Math.abs(backgroundPosition[1].replace('px', '') * 1);
 

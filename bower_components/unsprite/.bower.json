@@ -21,11 +21,11 @@
     "test",
     "tests"
   ],
-  "_release": "0a10d8ede7",
+  "_release": "0c250722a5",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "0a10d8ede742be713b8d9f60583e2d7182c997d8"
+    "commit": "0c250722a546af0d77ed8641574253af15deac0c"
   },
   "_source": "git://github.com/robertleeplummerjr/unsprite.git",
   "_target": "*",
