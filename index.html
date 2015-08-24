@@ -20,7 +20,7 @@
 			margin-left: auto;
 			margin-right: auto;
 			background-color: rgba(255,255,255,.9);
-			box-shadow:0px 0px 25px #FFFFFF;
+			box-shadow:0 0 25px #FFFFFF;
 		}
 	</style>
 </head>
@@ -38,6 +38,7 @@
 
 <div id="sprite-pit" style="opacity: 0.01; "></div>
 </body>
+<script src="bower_components/unsprite/unsprite.js"></script>
 <script src="bower_components/leaflet/dist/leaflet.js"></script>
 <script src="bower_components/operative/dist/operative.js"></script>
 <script src="canvasworker.js"></script>
@@ -63,75 +64,15 @@
 		});
 	}
 
-	function unSprite() {
-		var i = 0,
-			className,
-			max = arguments.length - 1,
-			callback = arguments[arguments.length - 1],
-			drawn = 0,
-			images = [];
-
-		for(;i < max; i++) {
-			className = arguments[i];
-
-			(function() {
-				var div = document.createElement('div'),
-					img = new Image(),
-					unSpriteImg = new Image(),
-					unSpriteCanvas = document.createElement('canvas'),
-					style;
-
-				div.className = className;
-				style = window.getComputedStyle(div);
-				images.push(unSpriteImg);
-				img.onload = function () {
-					drawn++;
-
-					var canvas = document.createElement('canvas'),
-						context,
-						backgroundPosition = style.backgroundPosition.split(' '),
-						w = style.width.replace('px', '') * 1,
-						h = style.height.replace('px', '') * 1,
-						x = Math.abs(backgroundPosition[0].replace('px', '') * 1),
-						y = Math.abs(backgroundPosition[1].replace('px', '') * 1);
-
-					canvas.width = this.width;
-					canvas.height = this.height;
-
-					context = canvas.getContext('2d');
-					context.clearRect(0, 0, canvas.width, canvas.height);
-					context.drawImage(this, 0, 0);
-					unSpriteCanvas.getContext('2d').putImageData(context.getImageData(
-						x,
-						y,
-						unSpriteCanvas.width = w,
-						unSpriteCanvas.height = h
-					), 0, 0);
-
-					unSpriteImg.src = unSpriteCanvas.toDataURL();
-
-					if (drawn === max) {
-						callback(images);
-					}
-				};
-
-				img.src = style.backgroundImage
-					.replace(/"/g, '')
-					.replace(/^url[(]/, '')
-					.replace(/[)]$/, '');
-			})();
-		}
-	}
-
 	// Chicago, that happening town!
-	var map = L.map('map').setView([41.8762302,-87.647934], 13);
+	//var map = L.map('map').setView([41.8762302,-87.647934], 13);
 
 	// add an OpenStreetMap tile layer
-	L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+	/*L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
 		attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-	}).addTo(map);
+	}).addTo(map);*/
 
-	unSprite(
+	unsprite(
 		'awesome-marker awesome-marker-icon-red',
 		'awesome-marker awesome-marker-icon-darkred',
 		'awesome-marker awesome-marker-icon-lightred',
