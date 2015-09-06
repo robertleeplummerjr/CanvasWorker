@@ -58,37 +58,37 @@ var CanvasWorker = (function(L) {
 		 * @returns {CanvasWorker}
 		 */
 		toRaw: function() {
-		    var i = 0,
+			var i = 0,
 				images = this.images,
 				max = images.length,
 				img,
 				canvas,
 				context,
-                res = unsprite.res(),
-                ratio = res > 1 ? 2 : 1,
-                w,
-                h;
+				res = unsprite.res(),
+				ratio = res > 1 ? 2 : 1,
+				w,
+				h;
 
 			for (;i < max; i++) {
 				img = images[i];
 				canvas = document.createElement("canvas");
 
 				//resize if needed
-                w = canvas.width = img.width / ratio,
+				w = canvas.width = img.width / ratio,
 				h = canvas.height = img.height / ratio;
 
 				context = canvas.getContext('2d');
 				context.clearRect(0, 0, w, h);
 
-                //rescale if needed
-                if (res > 1) {
-                    context.scale(0.5, 0.5);
-                }
+				//rescale if needed
+				if (res > 1) {
+					context.scale(0.5, 0.5);
+				}
 
 				context.drawImage(img, 0, 0);
 
 				if (w > 0 && h > 0) {
-				    this.raw[i] = context.getImageData(0, 0, w, h);
+					this.raw[i] = context.getImageData(0, 0, w, h);
 				}
 			}
 
@@ -108,8 +108,8 @@ var CanvasWorker = (function(L) {
 
 			for (;i < max; i++) {
 				(function (i, urlOrElement) {
-				    var url,
-                        element;
+					var url,
+						element;
 
 					if (typeof urlOrElement === 'string') {
 						url = urlOrElement;
@@ -193,10 +193,10 @@ var CanvasWorker = (function(L) {
 					tile.setAttribute('data-index', tiles.length.toString());
 
 					style = tile.style;
-                    style['opacity'] = 0.01;
-                    style['transition'] = 'opacity .25s ease-in-out';
-                    style['-moz-transition'] = 'opacity .25s ease-in-out';
-                    style['-webkit-transition'] = 'opacity .25s ease-in-out';
+					style['opacity'] = 0.01;
+					style['transition'] = 'opacity .25s ease-in-out';
+					style['-moz-transition'] = 'opacity .25s ease-in-out';
+					style['-webkit-transition'] = 'opacity .25s ease-in-out';
 					style.position = 'absolute';
 					style.left = (w * columnIndex) + 'px';
 					style.top = (h * rowIndex) + 'px';
@@ -220,7 +220,7 @@ var CanvasWorker = (function(L) {
 				tileIndex = 0,
 				sorted = 0,
 				cIndex,
-                image,
+				image,
 				tile,
 				w,
 				h,
@@ -228,9 +228,9 @@ var CanvasWorker = (function(L) {
 
 
 			for (cIndex = 0; cIndex < composeMax; cIndex++) {
-			    c = compose[cIndex];
-			    image = this.raw[c.image];
-			    if (image === undefined) continue;
+				c = compose[cIndex];
+				image = this.raw[c.image];
+				if (image === undefined) continue;
 				w = image.width;
 				h = image.height;
 				for (tileIndex = 0; tileIndex < tileMax; tileIndex++) {
@@ -274,20 +274,20 @@ var CanvasWorker = (function(L) {
 
 			for (;i< max;i++) {
 				(function(canvas) {
-				    var thread = me.thread(),
+					var thread = me.thread(),
 						context = canvas.getContext('2d'),
-                        compose = canvas.compose,
+						compose = canvas.compose,
 						rawCanvas,
 						doDraw,
-                        bounds,
-                        ne,
+						bounds,
+						ne,
 						sw;
 
-				    if (L !== undefined) {
-				        ne = map.containerPointToLatLng(L.point(canvas.left + canvas.width, canvas.top));
-				        sw = map.containerPointToLatLng(L.point(canvas.left, canvas.top + canvas.height));
-				        bounds = L.latLngBounds(sw, ne);
-				    }
+					if (L !== undefined) {
+						ne = map.containerPointToLatLng(L.point(canvas.left + canvas.width, canvas.top));
+						sw = map.containerPointToLatLng(L.point(canvas.left, canvas.top + canvas.height));
+						bounds = L.latLngBounds(sw, ne);
+					}
 
 					context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -302,9 +302,9 @@ var CanvasWorker = (function(L) {
 						success++;
 
 						canvas.addTo = function(map) {
-						    var dataUrl = canvas.toDataURL();
-						    return L.imageOverlay(dataUrl, bounds)
-                                .addTo(map);
+							var dataUrl = canvas.toDataURL();
+							return L.imageOverlay(dataUrl, bounds)
+								.addTo(map);
 						};
 
 						if (success === max) {
@@ -328,7 +328,7 @@ var CanvasWorker = (function(L) {
 		 * @returns {operative|Object}
 		 */
 		thread: function() {
-            if (this.settings.threadCount === 0) return CanvasWorker.threadScope;
+			if (this.settings.threadCount === 0) return CanvasWorker.threadScope;
 
 			var activeThread,
 				i = CanvasWorker.threadIndex;
@@ -336,12 +336,12 @@ var CanvasWorker = (function(L) {
 			if (i >= this.settings.threadCount) i = CanvasWorker.threadIndex = 0;
 
 			if (CanvasWorker.activeThreads[i] === undefined) {
-                CanvasWorker.activeThreads[i] = operative(CanvasWorker.threadScope);
+				CanvasWorker.activeThreads[i] = operative(CanvasWorker.threadScope);
 			}
 
 			activeThread = CanvasWorker.activeThreads[i];
 
-            CanvasWorker.threadIndex++;
+			CanvasWorker.threadIndex++;
 
 			return activeThread;
 		}
@@ -383,15 +383,15 @@ var CanvasWorker = (function(L) {
 		 */
 		element: null,
 
-        /**
-         * @type {Number}
-         */
+		/**
+		 * @type {Number}
+		 */
 		threadCount: 8,
 
-	    /**
-         * @type {Boolean}
-         */
-        retina: false
+		/**
+		 * @type {Boolean}
+		 */
+		retina: false
 	};
 
 	/**
@@ -410,13 +410,130 @@ var CanvasWorker = (function(L) {
 		 * @param {Function} [callback]
 		 */
 		drawEach: function(compose, rawImages, rawCanvas, tileX, tileY, callback) {
-			var i = 0,
-				max = compose.length,
-				c;
+		    var i = 0,
+				maxI = compose.length,
+				c,
+                rawImage,
+                x,
+                y,
 
-			for (;i < max; i++) {
-				c = compose[i];
-				rawCanvas = this.draw(rawCanvas, rawImages[c.image], c.x - tileX, c.y - tileY);
+                /****/
+
+                /**
+			     * Lookup x & y from index
+			     * y = (i / 4) % width
+			     * x = Math.floor((i / 4) / width)
+			     *
+			     * Lookup index from x & y
+			     * i = (y * width + x) * 4
+			     */
+			    newCanvasData = rawCanvas.data,
+                imageData,
+
+                //set starting point
+                j,
+                canvasX,
+                canvasY,
+                maxJ,
+                imageX,
+                imageY,
+                canvasIndex,
+                norm = 1 / 255,
+
+                _0,
+                _1,
+                _2,
+                _3,
+
+                //rgbn from image (there)
+                _r,
+                _g,
+                _b,
+                _n,
+
+                //rgbn from canvas (here)
+                r_,
+                g_,
+                b_,
+                n_;
+
+			for (;i < maxI; i++) {
+			    c = compose[i];
+			    rawImage = rawImages[c.image];
+			    x = c.x - tileX >> 0;
+			    y = c.y - tileY >> 0;
+
+			    if (x === undefined) continue;
+			    if (y === undefined) continue;
+
+
+			    /**********************/
+			    j = 0;
+			    imageData = rawImage.data;
+			    maxJ = imageData.length;
+                imageX = 0;
+                imageY = 0;
+
+			    for (; j < maxJ;) { // iterate through image bytes
+			        imageX = (j / 4) % rawImage.width;
+			        imageY = Math.floor((j / 4) / rawImage.width);
+			        canvasX = imageX + x;
+			        canvasY = imageY + y;
+			        canvasIndex = (canvasY * rawCanvas.width + canvasX) * 4;
+
+			        if (canvasX < 0 || canvasX >= rawCanvas.width) {
+			            j += 4;
+			            continue;
+			        }
+
+			        _r = imageData[j++];
+			        _g = imageData[j++];
+			        _b = imageData[j++];
+			        _n = imageData[j++];
+
+			        _0 = canvasIndex++;
+			        _1 = canvasIndex++;
+			        _2 = canvasIndex++;
+			        _3 = canvasIndex++;
+
+			        r_ = newCanvasData[_0];
+			        g_ = newCanvasData[_1];
+			        b_ = newCanvasData[_2];
+			        n_ = newCanvasData[_3];
+
+			        n_ += _n;
+			        n_ = Math.min(n_, 255);
+
+			        //first off, if _n (foreground opacity) is 255, that means it superceedes everything else
+			        if (_n === 255) {
+			            r_ = _r;
+			            g_ = _g;
+			            b_ = _b;
+			        }
+
+			        //else if foreground is more than 0, then it needs to be blended
+			        //outputRed = (foregroundRed * foregroundAlpha) + (backgroundRed * (1.0 - foregroundAlpha));
+			        else if (_n > 0) {
+			            r_ = (_r * _n * norm) + (r_ * (1 - (_n * norm)));
+			            b_ = (_b * _n * norm) + (b_ * (1 - (_n * norm)));
+			            g_ = (_g * _n * norm) + (g_ * (1 - (_n * norm)));
+			        }
+
+			        //if all else fails
+			        else {
+			            r_ = Math.min(r_ + _r, 255);
+			            g_ = Math.min(g_ + _g, 255);
+			            b_ = Math.min(b_ + _b, 255);
+			        }
+
+			        newCanvasData[_0] = r_;
+			        newCanvasData[_1] = g_;
+			        newCanvasData[_2] = b_;
+			        newCanvasData[_3] = n_;
+			    }
+			    /**********************/
+
+				//rawCanvas = this.draw(rawCanvas, rawImages[c.image], c.x - tileX, c.y - tileY);
 			}
 
 			if (callback) callback(rawCanvas);
@@ -456,19 +573,24 @@ var CanvasWorker = (function(L) {
 				imageX = 0,
 				imageY = 0,
 				canvasIndex,
-                norm = 1 / 255,
+				norm = 1 / 255,
 
-                //rgbn from image (there)
-                _r,
-                _g,
-                _b,
-                _n,
+                _0,
+                _1,
+                _2,
+                _3,
 
-                //rgbn from canvas (here)
-                r_,
-                g_,
-                b_,
-                n_;
+				//rgbn from image (there)
+				_r,
+				_g,
+				_b,
+				_n,
+
+				//rgbn from canvas (here)
+				r_,
+				g_,
+				b_,
+				n_;
 
 			for (;i < max;) { // iterate through image bytes
 				imageX = (i / 4) % rawImage.width;
@@ -482,53 +604,58 @@ var CanvasWorker = (function(L) {
 					continue;
 				}
 
-                _r = imageData[i++];
-                _g = imageData[i++];
-                _b = imageData[i++];
-                _n = imageData[i++];
+				_r = imageData[i++];
+				_g = imageData[i++];
+				_b = imageData[i++];
+				_n = imageData[i++];
 
-                r_ = newCanvasData[canvasIndex];
-                g_ = newCanvasData[canvasIndex+1];
-                b_ = newCanvasData[canvasIndex+2];
-                n_ = newCanvasData[canvasIndex+3];
+				_0 = canvasIndex++;
+				_1 = canvasIndex++;
+				_2 = canvasIndex++;
+				_3 = canvasIndex++;
 
-                n_ += _n;
-                n_ = Math.min(n_, 255);
+				r_ = newCanvasData[_0];
+				g_ = newCanvasData[_1];
+				b_ = newCanvasData[_2];
+				n_ = newCanvasData[_3];
 
-                //first off, if _n (foreground opacity) is 255, that means it superceedes everything else
-                if (_n === 255) {
-                    r_ = _r;
-                    g_ = _g;
-                    b_ = _b;
-                }
+				n_ += _n;
+				n_ = Math.min(n_, 255);
 
-                //else if foreground is more than 0, then it needs to be blended
-                //outputRed = (foregroundRed * foregroundAlpha) + (backgroundRed * (1.0 - foregroundAlpha));
-                else if (_n > 0) {
-                    r_ = (_r * _n * norm) + (r_ * (1 - (_n * norm)));
-                    b_ = (_b * _n * norm) + (b_ * (1 - (_n * norm)));
-                    g_ = (_g * _n * norm) + (g_ * (1 - (_n * norm)));
-                }
+				//first off, if _n (foreground opacity) is 255, that means it superceedes everything else
+				if (_n === 255) {
+					r_ = _r;
+					g_ = _g;
+					b_ = _b;
+				}
 
-                //if all else fails
-                else {
-                    r_ = Math.min(r_ + _r, 255);
-                    g_ = Math.min(g_ + _g, 255);
-                    b_ = Math.min(b_ + _b, 255);
-                }
+				//else if foreground is more than 0, then it needs to be blended
+				//outputRed = (foregroundRed * foregroundAlpha) + (backgroundRed * (1.0 - foregroundAlpha));
+				else if (_n > 0) {
+					r_ = (_r * _n * norm) + (r_ * (1 - (_n * norm)));
+					b_ = (_b * _n * norm) + (b_ * (1 - (_n * norm)));
+					g_ = (_g * _n * norm) + (g_ * (1 - (_n * norm)));
+				}
 
-                newCanvasData[canvasIndex++] = r_;
-                newCanvasData[canvasIndex++] = g_;
-                newCanvasData[canvasIndex++] = b_;
-                newCanvasData[canvasIndex++] = n_;
+				//if all else fails
+				else {
+					r_ = Math.min(r_ + _r, 255);
+					g_ = Math.min(g_ + _g, 255);
+					b_ = Math.min(b_ + _b, 255);
+				}
+
+				newCanvasData[_0] = r_;
+				newCanvasData[_1] = g_;
+				newCanvasData[_2] = b_;
+				newCanvasData[_3] = n_;
 			}
 
 			return rawCanvas;
 		}
 	};
 
-    CanvasWorker.activeThreads = {};
-    CanvasWorker.threadIndex = 0;
+	CanvasWorker.activeThreads = {};
+	CanvasWorker.threadIndex = 0;
 
 	return CanvasWorker;
 })(L);
